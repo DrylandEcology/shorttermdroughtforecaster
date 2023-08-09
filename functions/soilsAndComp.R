@@ -7,12 +7,21 @@ set_soils <- function(sw_in, soils, sand, clay){
   }
   
   # always have 10 layers - 5, 10, 15, 20, 30, 40, 60, 80, 100, 150
-  
-  Soils <- sw_in@soils@Layers
+
+  Soils <- rSOILWAT2::swSoils_Layers(sw_in)
   Soils <- rbind(Soils[1:2,], Soils[3,], Soils[3:8,], Soils[8,] )
   Soils[c(3,10),'depth_cm'] <- c(15, 150)
-  sw_in@soils@Layers <- Soils
-  
+
+  # Hack for evco and trco (each must sum to 1 across soil profile)
+  # (repeating soil layers in the `rbind()` call screwed them up)
+  varsFix1 <- grep("EvapBare|transp", colnames(Soils), value = TRUE)
+  for (vf in varsFix1) {
+    Soils[, vf] <- Soils[, vf] / sum(Soils[, vf])
+  }
+
+  # Assign newly created soil information to simulation input object
+  rSOILWAT2::swSoils_Layers(sw_in) <- Soils
+
   return(sw_in)
   
 }
